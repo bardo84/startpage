@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Start Page</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    :root {
+      --bg-blur: 12px;
+      --max-content-width: 960px;
+      --text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #f9fafb;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      overflow: hidden;
+      /* OPTIMIZATION: CSS Gradient instead of huge SVG string */
+      background: linear-gradient(135deg, #0ea5e9, #6366f1, #f97316);
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
+
+    .content {
+      text-align: center;
+      width: 100%;
+      max-width: var(--max-content-width);
+      padding: 3rem 1.5rem 2rem;
+      position: relative;
+    }
+
+    .time {
+      font-size: clamp(3rem, 9vw, 4.5rem);
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.25rem;
+      text-shadow: var(--text-shadow);
+    }
+
+    .date {
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      opacity: 0.9;
+      margin-bottom: 2.2rem;
+      text-shadow: var(--text-shadow);
+    }
+
+    /* SEARCH BAR */
+    .search-box {
+      max-width: 640px;
+      margin: 0 auto 2.5rem;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 0.9rem 1.2rem;
+      border-radius: 999px;
+      border: none;
+      background: #ffffff;
+      color: #0f172a;
+      font-size: 0.98rem;
+      outline: none;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.45);
+    }
+
+    .search-box input::placeholder {
+      color: #9ca3af;
+    }
+
+    /* SHORTCUTS */
+    .shortcut-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1.1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .shortcut {
+      width: 70px;
+      text-decoration: none;
+      color: #e5e7eb;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.7rem;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+      position: relative; /* For delete button positioning */
+      cursor: pointer;
+    }
+
+    .shortcut-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 16px;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.55);
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .shortcut-icon img {
+      width: 70%;
+      height: 70%;
+      object-fit: contain;
+    }
+
+    .shortcut-label {
+      text-align: center;
+      max-width: 72px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .shortcut:hover .shortcut-icon {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.75);
+    }
+
+    /* EDIT UI (New) */
+    .delete-btn {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      width: 18px;
+      height: 18px;
+      background: #ef4444;
+      color: white;
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s;
+      border: 2px solid #020617;
+      z-index: 10;
+    }
+
+    .shortcut:hover .delete-btn {
+      opacity: 1;
+    }
+
+    .add-btn-icon {
+      font-size: 1.5rem;
+      color: #64748b;
+    }
+
+    /* BG PICKER */
+    .bg-picker {
+      position: fixed;
+      right: 0.75rem;
+      bottom: 0.75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.35rem;
+      background: rgba(0, 0, 0, 0.55);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      border-radius: 999px;
+      backdrop-filter: blur(6px);
+      z-index: 20;
+      font-size: 1.1rem;
+    }
+
+    .bg-picker input[type="file"] {
+      display: none;
+    }
+
+    .bg-picker label,
+    .bg-picker button {
+      border: none;
+      background: transparent;
+      color: #e5e7eb;
+      cursor: pointer;
+      font-size: 1.15rem;
+      padding: 0;
+      line-height: 1;
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="content">
+    <div class="time" id="time">00:00</div>
+    <div class="date" id="date">Start Page</div>
+
+    <div class="search-box">
+      <form id="searchForm" action="https://duckduckgo.com/" method="GET">
+        <input
+          id="searchInput"
+          name="q"
+          type="text"
+          autocomplete="off"
+          placeholder=""
+          autofocus
+        />
+      </form>
+    </div>
+
+    <div class="shortcut-row" id="shortcuts"></div>
+  </main>
+
+  <div class="bg-picker">
+    <label for="bgFile" title="Choose background">📁</label>
+    <input id="bgFile" type="file" accept="image/*" />
+    <button id="bgReset" title="Reset background">⟲</button>
+  </div>
+
+<script>
+////////////////////////////////////////////////////////////////////////////////
+// Background Logic (LocalStorage + CSS Fallback)
+////////////////////////////////////////////////////////////////////////////////
+const BG_STORAGE_KEY = "customStartpageBg";
+
+function loadBackground() {
+  const stored = localStorage.getItem(BG_STORAGE_KEY);
+  if (stored) {
+    document.body.style.backgroundImage = `url(${stored})`;
+  } else {
+    // If no custom image, clean inline style to let CSS gradient show
+    document.body.style.backgroundImage = ''; 
+  }
+}
+loadBackground();
+
+// File Upload Handler
+document.getElementById("bgFile").addEventListener("change", function () {
+  const file = this.files && this.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    const dataUrl = e.target.result;
+    localStorage.setItem(BG_STORAGE_KEY, dataUrl);
+    loadBackground();
+  };
+  reader.readAsDataURL(file);
+});
+
+// Reset Handler
+document.getElementById("bgReset").addEventListener("click", () => {
+  localStorage.removeItem(BG_STORAGE_KEY);
+  loadBackground();
+});
+
+////////////////////////////////////////////////////////////////////////////////
+// Clock (Maintains original Date logic, no greeting)
+////////////////////////////////////////////////////////////////////////////////
+function updateClock() {
+  const now = new Date();
+  const h = now.getHours().toString().padStart(2, "0");
+  const m = now.getMinutes().toString().padStart(2, "0");
+  document.getElementById("time").textContent = `${h}:${m}`;
+
+  document.getElementById("date").textContent =
+    now.toLocaleDateString(undefined, {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric"
+    });
+}
+updateClock();
+setInterval(updateClock, 15000);
+
+////////////////////////////////////////////////////////////////////////////////
+// Search URL detection
+////////////////////////////////////////////////////////////////////////////////
+const searchInput = document.getElementById("searchInput");
+// Enhancement: Ensure focus on load
+searchInput.focus();
+
+document.getElementById("searchForm").addEventListener("submit", e => {
+  const q = searchInput.value.trim();
+  if (!q) return;
+
+  const urlWithScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\/\S+$/;
+  const bareDomain = /^[\w.-]+\.\w{2,}(:\d+)?(\/\S*)?$/;
+
+  if (urlWithScheme.test(q)) {
+    e.preventDefault();
+    window.location.href = q;
+  } else if (bareDomain.test(q)) {
+    e.preventDefault();
+    window.location.href = "https://" + q;
+  }
+});
+
+////////////////////////////////////////////////////////////////////////////////
+// Dynamic Shortcuts (LocalStorage + Edit UI)
+////////////////////////////////////////////////////////////////////////////////
+const STORAGE_KEY_SHORTCUTS = "myShortcuts";
+const DEFAULT_SHORTCUTS = [
+  { href: "https://chat.openai.com",      label: "ChatGPT" },
+  { href: "https://bsky.app",             label: "BlueSky" },
+  { href: "https://news.ycombinator.com", label: "Hacker News" },
+  { href: "https://www.google.com",       label: "Google" },
+  { href: "https://drive.google.com",     label: "Drive" },
+  { href: "https://web.whatsapp.com",     label: "WhatsApp" },
+  { href: "https://mail.google.com",      label: "Mail" }
+];
+
+// Load or Default
+let shortcuts = JSON.parse(localStorage.getItem(STORAGE_KEY_SHORTCUTS)) || DEFAULT_SHORTCUTS;
+
+function saveShortcuts() {
+  localStorage.setItem(STORAGE_KEY_SHORTCUTS, JSON.stringify(shortcuts));
+  renderShortcuts();
+}
+
+function getFavicon(href) {
+  try {
+    const domain = new URL(href).hostname;
+    return "https://www.google.com/s2/favicons?sz=64&domain=" + encodeURIComponent(domain);
+  } catch {
+    return ""; // Fallback or placeholder logic could go here
+  }
+}
+
+function renderShortcuts() {
+  const container = document.getElementById("shortcuts");
+  container.innerHTML = "";
+
+  // Render existing shortcuts
+  shortcuts.forEach((item, index) => {
+    const link = document.createElement("a");
+    link.className = "shortcut";
+    link.href = item.href;
+    
+    // Delete Button
+    const delBtn = document.createElement("span");
+    delBtn.className = "delete-btn";
+    delBtn.innerHTML = "×";
+    delBtn.title = "Remove shortcut";
+    delBtn.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if(confirm(`Remove "${item.label}"?`)) {
+        shortcuts.splice(index, 1);
+        saveShortcuts();
+      }
+    };
+
+    // Icon
+    const iconDiv = document.createElement("div");
+    iconDiv.className = "shortcut-icon";
+    const img = document.createElement("img");
+    img.src = getFavicon(item.href);
+    img.alt = "";
+    iconDiv.appendChild(img);
+
+    // Label
+    const labelDiv = document.createElement("div");
+    labelDiv.className = "shortcut-label";
+    labelDiv.textContent = item.label;
+
+    link.appendChild(delBtn);
+    link.appendChild(iconDiv);
+    link.appendChild(labelDiv);
+    container.appendChild(link);
+  });
+
+  // Render "Add (+)" button
+  const addBtn = document.createElement("div");
+  addBtn.className = "shortcut";
+  addBtn.onclick = () => {
+    const url = prompt("Enter URL (e.g. reddit.com):");
+    if(!url) return;
+    
+    let finalUrl = url;
+    if (!/^https?:\/\//i.test(url)) {
+        finalUrl = "https://" + url;
+    }
+    
+    const label = prompt("Enter Name:", finalUrl.replace("https://", "").split(".")[0]);
+    if(!label) return;
+
+    shortcuts.push({ href: finalUrl, label: label });
+    saveShortcuts();
+  };
+
+  const addIconDiv = document.createElement("div");
+  addIconDiv.className = "shortcut-icon";
+  addIconDiv.style.background = "rgba(255,255,255,0.15)";
+  addIconDiv.innerHTML = `<span class="add-btn-icon">+</span>`;
+  
+  const addLabel = document.createElement("div");
+  addLabel.className = "shortcut-label";
+  addLabel.textContent = "Add";
+
+  addBtn.appendChild(addIconDiv);
+  addBtn.appendChild(addLabel);
+  container.appendChild(addBtn);
+}
+
+// Initial Render
+renderShortcuts();
+
+</script>
+</body>
+</html>
