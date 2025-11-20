@@ -1,6 +1,6 @@
 # Startpage
 
-A clean and simple, yet powerful browser start page.
+A clean and simple, single-file browser start page.
 
 ## Usage
 
