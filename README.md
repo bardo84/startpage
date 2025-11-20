@@ -1,5 +1,7 @@
 # Startpage
 
+![Startpage Screenshot](https://raw.githubusercontent.com/bardo84/startpage/main/startpage.png)
+
 A clean and simple, single-file browser start page.
 
 ## Usage
