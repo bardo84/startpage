@@ -216,11 +216,12 @@
     <div class="shortcut-row" id="shortcuts"></div>
   </main>
 
-  <div class="bg-picker">
-    <label for="bgFile" title="Choose background">🖼️</label> 
-    <input id="bgFile" type="file" accept="image/*" />
-    <button id="bgReset" title="Reset background">⟲</button>
-  </div>
+<div class="bg-picker">
+  <!-- Single button: label acts as the button and opens the file picker -->
+  <label id="bgToggle" for="bgFile" title="Change background">🖼️</label>
+  <input id="bgFile" type="file" accept="image/*" style="display: none" />
+</div>
+
 
 <script>
 ////////////////////////////////////////////////////////////////////////////////
