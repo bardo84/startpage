@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -21,8 +22,8 @@
       align-items: flex-start;
       justify-content: center;
       overflow: hidden;
-      /* OPTIMIZATION: CSS Gradient instead of huge SVG string */
-      background: linear-gradient(135deg, #0ea5e9, #6366f1, #f97316);
+
+      background: linear-gradient(135deg, #202c32, #141550, #965425);
       background-size: cover;
       background-position: center;
       background-attachment: fixed;
@@ -191,6 +192,48 @@
       padding: 0;
       line-height: 1;
     }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center; justify-content: center;
+      z-index: 100;
+    }
+    .modal {
+      background: #1e293b;
+      padding: 2rem;
+      border-radius: 16px;
+      width: 90%; max-width: 400px;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+      border: 1px solid rgba(148,163,184,0.1);
+      display: flex; flex-direction: column; gap: 1.25rem;
+    }
+    .modal h3 { margin: 0; font-size: 1.5rem; font-weight: 600; }
+    .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
+    .form-group label { font-size: 0.9rem; color: #94a3b8; }
+    .form-group input {
+      padding: 0.75rem 1rem;
+      background: #334155;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      color: #f8fafc;
+      font-size: 1rem;
+      outline: none;
+    }
+    .form-group input:focus { border-color: #6366f1; background: #475569; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 0.5rem; }
+    .btn {
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px; border: none;
+      font-size: 0.95rem; font-weight: 500;
+      cursor: pointer; transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn-cancel { background: transparent; color: #cbd5e1; }
+    .btn-primary { background: #6366f1; color: white; }
   </style>
 </head>
 
@@ -216,12 +259,29 @@
     <div class="shortcut-row" id="shortcuts"></div>
   </main>
 
-<div class="bg-picker">
-  <!-- Single button: label acts as the button and opens the file picker -->
-  <label id="bgToggle" for="bgFile" title="Change background">🖼️</label>
-  <input id="bgFile" type="file" accept="image/*" style="display: none" />
-</div>
+  <div class="bg-picker">
+    <label for="bgFile" title="Choose background">🖼</label> 
+    <input id="bgFile" type="file" accept="image/*" />
+  </div>
 
+  <!-- ADD SHORTCUT MODAL -->
+  <div class="modal-overlay" id="addShortcutModal">
+    <div class="modal">
+      <h3>Add Shortcut</h3>
+      <div class="form-group">
+        <label>URL</label>
+        <input type="text" id="shortcutUrl" placeholder="e.g. reddit.com" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" id="shortcutLabel" placeholder="e.g. Reddit" autocomplete="off">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-cancel" id="cancelModal">Cancel</button>
+        <button class="btn btn-primary" id="saveShortcut">Add</button>
+      </div>
+    </div>
+  </div>
 
 <script>
 ////////////////////////////////////////////////////////////////////////////////
@@ -254,10 +314,11 @@ document.getElementById("bgFile").addEventListener("change", function () {
   reader.readAsDataURL(file);
 });
 
-// Reset Handler
-document.getElementById("bgReset").addEventListener("click", () => {
+// Click Handler (Clear background when opening file selector)
+document.getElementById("bgFile").addEventListener("click", function() {
   localStorage.removeItem(BG_STORAGE_KEY);
   loadBackground();
+  this.value = null;
 });
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -380,21 +441,7 @@ function renderShortcuts() {
   // Render "Add (+)" button
   const addBtn = document.createElement("div");
   addBtn.className = "shortcut";
-  addBtn.onclick = () => {
-    const url = prompt("Enter URL (e.g. reddit.com):");
-    if(!url) return;
-    
-    let finalUrl = url;
-    if (!/^https?:\/\//i.test(url)) {
-        finalUrl = "https://" + url;
-    }
-    
-    const label = prompt("Enter Name:", finalUrl.replace("https://", "").split(".")[0]);
-    if(!label) return;
-
-    shortcuts.push({ href: finalUrl, label: label });
-    saveShortcuts();
-  };
+  addBtn.onclick = () => openModal();
 
   const addIconDiv = document.createElement("div");
   addIconDiv.className = "shortcut-icon";
@@ -412,6 +459,56 @@ function renderShortcuts() {
 
 // Initial Render
 renderShortcuts();
+
+////////////////////////////////////////////////////////////////////////////////
+// Modal Logic
+////////////////////////////////////////////////////////////////////////////////
+const modal = document.getElementById("addShortcutModal");
+const urlInput = document.getElementById("shortcutUrl");
+const labelInput = document.getElementById("shortcutLabel");
+
+function openModal() {
+  modal.style.display = "flex";
+  urlInput.value = "";
+  labelInput.value = "";
+  urlInput.focus();
+}
+
+function closeModal() {
+  modal.style.display = "none";
+}
+
+document.getElementById("cancelModal").onclick = closeModal;
+modal.addEventListener("click", e => {
+  if (e.target === modal) closeModal();
+});
+
+document.getElementById("saveShortcut").onclick = () => {
+  const url = urlInput.value.trim();
+  if(!url) return;
+  
+  let finalUrl = url;
+  if (!/^https?:\/\//i.test(url)) finalUrl = "https://" + url;
+  
+  let label = labelInput.value.trim();
+  if(!label) {
+    // Auto-generate label from domain
+    try {
+      const hostname = new URL(finalUrl).hostname;
+      label = hostname.replace("www.", "").split(".")[0];
+      label = label.charAt(0).toUpperCase() + label.slice(1);
+    } catch {
+      label = "Link";
+    }
+  }
+
+  shortcuts.push({ href: finalUrl, label: label });
+  saveShortcuts();
+  closeModal();
+};
+
+urlInput.addEventListener("keydown", e => { if(e.key === "Enter") labelInput.focus(); });
+labelInput.addEventListener("keydown", e => { if(e.key === "Enter") document.getElementById("saveShortcut").click(); });
 
 </script>
 </body>
