@@ -2,7 +2,7 @@
 
 ![Startpage Screenshot](https://raw.githubusercontent.com/bardo84/startpage/main/startpage.png)
 
-A clean and simple, single-file browser start page.
+A configurable, single-file browser start page.
 
 ## Usage
 
@@ -17,7 +17,7 @@ A clean and simple, single-file browser start page.
     *   Search the web using DuckDuckGo (this is hardcoded but can be changed in the `.html` file).
     *   Directly navigate to URLs or domains (e.g., `github.com`).
 *   **Customizable Shortcuts:**
-    *   Add your favorite websites for quick access.
+    *   Add your favorite websites via a popup menu (define both URL and custom Name).
     *   Remove shortcuts you no longer need.
     *   Your shortcuts are saved locally in your browser.
 *   **Custom Background:**
