@@ -13,8 +13,9 @@ A configurable, single-file browser start page.
 
 *   **Minimalist Design:** A clean and focused interface that gets out of your way.
 *   **Clock & Date:** Displays the current time and date.
-*   **Smart Search Bar:**
-    *   Search the web using DuckDuckGo (this is hardcoded but can be changed in the `.html` file).
+*   **Configurable Search Bar:**
+    *   Switch between multiple search engines (Google, DuckDuckGo, Bing) via dropdown selector.
+    *   Selected engine is saved locally in your browser.
     *   Directly navigate to URLs or domains (e.g., `github.com`).
 *   **Customizable Shortcuts:**
     *   Add your favorite websites via a popup menu (define both URL and custom Name).
