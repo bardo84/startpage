@@ -58,22 +58,70 @@
     .search-box {
       max-width: 640px;
       margin: 0 auto 2.5rem;
+      position: relative;
+    }
+
+    .search-container {
+      display: flex;
+      align-items: center;
+      background: white;
+      border-radius: 999px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.45);
+      padding: 0.9rem 1.2rem;
     }
 
     .search-box input {
-      width: 100%;
-      padding: 0.9rem 1.2rem;
-      border-radius: 999px;
+      flex: 1;
       border: none;
-      background: #ffffff;
+      background: transparent;
       color: #0f172a;
       font-size: 0.98rem;
       outline: none;
-      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.45);
     }
 
     .search-box input::placeholder {
       color: #9ca3af;
+    }
+
+    .search-icon {
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      margin-left: 10px;
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+
+    .search-icon:hover {
+      transform: scale(1.2);
+    }
+
+    .dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 10px);
+      right: 0;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      z-index: 1000;
+      min-width: 150px;
+      color: #0f172a;
+    }
+
+    .dropdown.active {
+      display: block;
+    }
+
+    .dropdown-item {
+      padding: 10px 15px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .dropdown-item:hover {
+      background: #f0f0f0;
     }
 
     /* SHORTCUTS */
@@ -244,16 +292,17 @@
     <div class="date" id="date">Start Page</div>
 
     <div class="search-box">
-      <form id="searchForm" action="https://duckduckgo.com/" method="GET">
+      <div class="search-container">
         <input
           id="searchInput"
-          name="q"
           type="text"
           autocomplete="off"
-          placeholder=""
+          placeholder="Search..."
           autofocus
         />
-      </form>
+        <img id="searchEngineIcon" src="https://www.google.com/s2/favicons?domain=google.com&sz=24" class="search-icon" onclick="toggleDropdown()">
+        <div class="dropdown" id="dropdown"></div>
+      </div>
     </div>
 
     <div class="shortcut-row" id="shortcuts"></div>
@@ -342,25 +391,77 @@ updateClock();
 setInterval(updateClock, 15000);
 
 ////////////////////////////////////////////////////////////////////////////////
-// Search URL detection
+// Search Engines Config (Similar to shortcuts)
+////////////////////////////////////////////////////////////////////////////////
+const STORAGE_KEY_SEARCH_ENGINE = "selectedSearchEngine";
+const DEFAULT_SEARCH_ENGINES = [
+  { id: "google", name: "Google", url: "https://www.google.com/search?q=", icon: "https://www.google.com/s2/favicons?domain=google.com&sz=24" },
+  { id: "duckduckgo", name: "DuckDuckGo", url: "https://duckduckgo.com/?q=", icon: "https://www.google.com/s2/favicons?domain=duckduckgo.com&sz=24" },
+  { id: "bing", name: "Bing", url: "https://www.bing.com/search?q=", icon: "https://www.google.com/s2/favicons?domain=bing.com&sz=24" }
+];
+
+let selectedSearchEngine = localStorage.getItem(STORAGE_KEY_SEARCH_ENGINE) || "google";
+
+function renderSearchEngines() {
+  const dropdown = document.getElementById("dropdown");
+  dropdown.innerHTML = "";
+  
+  DEFAULT_SEARCH_ENGINES.forEach(engine => {
+    const item = document.createElement("div");
+    item.className = "dropdown-item";
+    item.textContent = engine.name;
+    item.onclick = () => selectSearchEngine(engine.id);
+    dropdown.appendChild(item);
+  });
+}
+
+function selectSearchEngine(engineId) {
+  selectedSearchEngine = engineId;
+  localStorage.setItem(STORAGE_KEY_SEARCH_ENGINE, engineId);
+  
+  const engine = DEFAULT_SEARCH_ENGINES.find(e => e.id === engineId);
+  document.getElementById("searchEngineIcon").src = engine.icon;
+  document.getElementById("dropdown").classList.remove("active");
+}
+
+function toggleDropdown() {
+  document.getElementById("dropdown").classList.toggle("active");
+}
+
+// Initialize dropdown
+renderSearchEngines();
+selectSearchEngine(selectedSearchEngine);
+
+// Close dropdown when clicking outside
+document.addEventListener("click", function(e) {
+  if (!e.target.closest(".search-box")) {
+    document.getElementById("dropdown").classList.remove("active");
+  }
+});
+
+////////////////////////////////////////////////////////////////////////////////
+// Search URL detection & Query submission
 ////////////////////////////////////////////////////////////////////////////////
 const searchInput = document.getElementById("searchInput");
-// Enhancement: Ensure focus on load
 searchInput.focus();
 
-document.getElementById("searchForm").addEventListener("submit", e => {
-  const q = searchInput.value.trim();
-  if (!q) return;
+searchInput.addEventListener("keydown", function(e) {
+  if (e.key === "Enter") {
+    const q = searchInput.value.trim();
+    if (!q) return;
 
-  const urlWithScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\/\S+$/;
-  const bareDomain = /^[\w.-]+\.\w{2,}(:\d+)?(\/\S*)?$/;
+    const urlWithScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\/\S+$/;
+    const bareDomain = /^[\w.-]+\.\w{2,}(:\d+)?(\/\S*)?$/;
 
-  if (urlWithScheme.test(q)) {
-    e.preventDefault();
-    window.location.href = q;
-  } else if (bareDomain.test(q)) {
-    e.preventDefault();
-    window.location.href = "https://" + q;
+    if (urlWithScheme.test(q)) {
+      window.location.href = q;
+    } else if (bareDomain.test(q)) {
+      window.location.href = "https://" + q;
+    } else {
+      // Regular search query
+      const engine = DEFAULT_SEARCH_ENGINES.find(e => e.id === selectedSearchEngine);
+      window.location.href = engine.url + encodeURIComponent(q);
+    }
   }
 });
 
